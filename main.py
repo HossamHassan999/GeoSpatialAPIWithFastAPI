@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from db import SessionLocal, engine
 from models import Item
-from services import get_roads_as_geojson , get_roads_as_geojson_ById,get_roads_near_point
+from services import RoadUtility 
 from db import get_db    
 from schemas.item import FeatureCollection ,Coords
 from fastapi import HTTPException
@@ -17,17 +17,18 @@ from fastapi import HTTPException
 
 
 app = FastAPI()
+road_util = RoadUtility()
 
 
 @app.get("/items")
 async def read_items(db: Session = Depends(get_db)):
-    items =  get_roads_as_geojson(db)
+    items =  road_util.get_roads_as_geojson(db)
     return items
 
 
 @app.get("/items/{id}",response_model=FeatureCollection)
 async def getbyid(id:int ,db : Session = Depends(get_db) ):
-    item = get_roads_as_geojson_ById(id,db)
+    item = road_util.get_roads_as_geojson_ById(id,db)
     if item :
         return item
     else:
@@ -36,7 +37,7 @@ async def getbyid(id:int ,db : Session = Depends(get_db) ):
     
 @app.post("/GetDataByCoord", response_model=FeatureCollection)
 async def getbycoord(coords: Coords, db: Session = Depends(get_db)):
-    item = get_roads_near_point(coords.lon, coords.lat, coords.distance, db)
+    item = road_util.get_roads_near_point(coords.lon, coords.lat, coords.distance, db)
     if item:
         return item
     else:

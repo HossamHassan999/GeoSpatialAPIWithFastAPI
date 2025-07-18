@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models import Item
 import json
+from geoalchemy2.elements import WKTElement
 
 
 
@@ -25,48 +26,49 @@ def MakeGeoJson(result):
         "features": features
     }
     
+   
     
-    
-def get_roads_as_geojson(db: Session):
-    result = db.query(
-        Item.id,
-        Item.name,
-        func.ST_AsGeoJSON(Item.geom).label("geometry")
-    ).limit(50).all()
-    
-    return  MakeGeoJson(result)
-
-
-
-def get_roads_as_geojson_ById(id:int, db: Session):
-    result = db.query(
-        Item.id,
-        Item.name,
-        func.ST_AsGeoJSON(Item.geom).label("geometry")
-    ).filter(Item.id==id).first()
-    
-    return  MakeGeoJson([result])
-
-
-
-from geoalchemy2.elements import WKTElement
-
-def get_roads_near_point(lon: float, lat: float, distance: float, db: Session):
-    
-    point_wkt = func.ST_GeomFromText(f'POINT({lon} {lat})', srid=4326)
-
-    result = db.query(
-        Item.id,
-        Item.name,
-        func.ST_AsGeoJSON(Item.geom).label("geometry")
-    ).filter(
-          func.ST_DWithin(
-            func.Geography(Item.geom), 
-            func.Geography(point_wkt), 
-            distance    
-        )
+class RoadUtility:
+            
+    def get_roads_as_geojson(self,db: Session):
+        result = db.query(
+            Item.id,
+            Item.name,
+            func.ST_AsGeoJSON(Item.geom).label("geometry")
+        ).limit(50).all()
         
-    ).all()
+        return  MakeGeoJson(result)
 
-    return MakeGeoJson(result)
+
+
+    def get_roads_as_geojson_ById(self,id:int, db: Session):
+        result = db.query(
+            Item.id,
+            Item.name,
+            func.ST_AsGeoJSON(Item.geom).label("geometry")
+        ).filter(Item.id==id).first()
+        
+        return  MakeGeoJson([result])
+
+
+
+
+    def get_roads_near_point(self,lon: float, lat: float, distance: float, db: Session):
+        
+        point_wkt = func.ST_GeomFromText(f'POINT({lon} {lat})', srid=4326)
+
+        result = db.query(
+            Item.id,
+            Item.name,
+            func.ST_AsGeoJSON(Item.geom).label("geometry")
+        ).filter(
+            func.ST_DWithin(
+                func.Geography(Item.geom), 
+                func.Geography(point_wkt), 
+                distance    
+            )
+            
+        ).all()
+
+        return MakeGeoJson(result)
 
